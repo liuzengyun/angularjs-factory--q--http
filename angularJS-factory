@@ -1,0 +1,52 @@
+angularJS做了一个项目了，想用服务将之前的代码封装一下，可是遇到了这样的问题，自定义的服务，在控制器中怎么都获取不到数据。
+
+错误代码
+var myapp = angular.module("myapp", []);
+myapp.factory("userInfo", function($http) {
+  // 服务就是对象，新建对象，并返回
+  var userInfo = {};
+  userInfo.userfun = {
+    $http.get("json/books.json").success(function(data) {
+      return data;
+    }
+  }
+  return {
+    userInfo: userInfo
+  }
+}
+
+myapp.controller("myCtrl", function(userInfo) {
+  console.log(userinfo.userfun())   // undefined
+}
+
+// 正确代码，使用angularjs 服务$q，参考地址如下：
+http://www.tuicool.com/articles/FfaA7bu
+
+var myapp = angular.module("myapp", []);
+    // 定义服务,调用接口,查询数据
+    myapp.factory("userInfo", function($http, $q) {
+       // 服务返回一个对象
+      var userInfo = {};
+      userInfo.getUserInfo = function() {
+        // 创建一个实例
+          var deferrd = $q.defer();
+          $http.get("json/books.json").success(function(data) {
+            // 成功
+            deferrd.resolve(data);
+          }).error(function(data) {
+            // 失败
+            deferrd.reject(data);
+          });
+          // 返回数据
+           return deferrd.promise;
+       };
+       return userInfo;
+
+  });
+
+ myapp.controller("myCtrl", function($scope, userInfo) {
+       userInfo.getUserInfo().then(function(data) {
+          console.log(data);
+           $scope.data = data.books;
+      })
+  })
